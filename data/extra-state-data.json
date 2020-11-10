@@ -1,0 +1,18 @@
+{
+  "AZ": {
+    "ballotProcessingExplanationUrls": [
+      "https://www.azcentral.com/story/news/politics/elections/2020/11/04/least-400-k-ballots-left-count-arizona-republic-estimates-and-number-certainly-higher/6157997002/",
+      "https://www.azcentral.com/story/news/politics/elections/2020/11/05/arizona-vote-counting-slowed-early-ballots-arriving-election-day/6180648002/"
+    ]
+  },
+  "CA": {
+    "ballotProcessingExplanationUrls": [
+      "https://www.sos.ca.gov/elections/official-canvass"
+    ]
+  },
+  "NY": {
+    "ballotProcessingExplanationUrls": [
+      "https://www.nytimes.com/2020/11/04/nyregion/ny-absentee-ballot-count.html"
+    ]
+  }
+}

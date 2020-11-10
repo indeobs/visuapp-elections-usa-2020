@@ -1,0 +1,119 @@
+<template>
+  <div v-if="areaData" class="maxWidth">
+    <h1>Votes per state per day</h1>
+    <div class="TooltipProcessingballotByStateByDay">
+      <div class="stateHeader">{{ areaData.electoralAreaCode }}</div>
+      <!--div v-for="result in areaData.results" :id="result.date" :key="result.date">
+        {{ result }}
+      </div-->
+      <table class="table">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col"></th>
+            <th
+              v-for="result in areaData.results"
+              :id="result.date"
+              :key="result.date"
+              scope="col"
+            >
+              {{
+                new Date(result.date).getTime() === 1604509749000 // 2020-11-04T17:09:09Z
+                  ? `At 11/04 ${new Date(result.date).toLocaleString(undefined, { hour: 'numeric', minute: 'numeric', second: 'numeric' })}`
+                  : `On 11/${
+                      new Date(
+                        new Date(result.date).getTime() - 24 * 60 * 60 * 1000
+                      ).getDate()
+                    }`
+              }}
+            </th>
+            <th scope="col" class="lastCol">Last known result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-subhead">
+            <th scope="row">Percent of #votes</th>
+            <td
+              v-for="result in areaData.results"
+              :id="result.date"
+              :key="result.date"
+              scope="col"
+            >
+              <!-- // use totalCount? -->
+              {{ (100 * result.proportion).toFixed(2) }}
+            </td>
+            <td class="lastCol">100</td>
+          </tr>
+          <tr v-for="contestant in contestants" :key="contestant">
+            <th scope="row">{{ contestant }}</th>
+            <td
+              v-for="result in areaData.results"
+              :id="result.date"
+              :key="result.date"
+              scope="col"
+            >
+              <!-- // use resultsSoFar? -->
+              {{ (100 * result.resultsThatDay[contestant]).toFixed(2) }}
+            </td>
+            <td class="lastCol">
+            {{ (100 * areaData.results[areaData.results.length-1].resultsSoFar[contestant]).toFixed(2) }}  
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+// @ts-nocheck
+import Vue from 'vue'
+
+export default Vue.extend({
+  props: {
+    areaData: {
+      type: Object,
+      default: undefined,
+    },
+  },
+  computed: {
+    contestants() {
+      if (!this.areaData) {
+        return null
+      }
+      // console.log(this.areaData.results[0].date, new Date(this.areaData.results[0].date).getTime());
+      const latestDayResult = this.areaData.results[
+        this.areaData.results.length - 1
+      ]
+      const contestants = Object.keys(latestDayResult.resultsSoFar).sort(
+        (a, b) =>
+          latestDayResult.resultsSoFar[b] - latestDayResult.resultsSoFar[a]
+      )
+      return contestants
+    },
+  },
+})
+</script>
+
+<style>
+.maxWidth {
+  width: max-content;
+}
+
+.TooltipProcessingballotByStateByDay {
+  background-color: grey;
+}
+
+.row-subhead {
+  background-color: rgb(78, 70, 70);
+  color: white;
+}
+
+.stateHeader {
+  font-weight: bold;
+  font-size: 200%;
+}
+
+.lastCol {
+  border-left: solid 1px #000;
+}
+</style>
