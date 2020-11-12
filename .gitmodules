@@ -1,0 +1,3 @@
+[submodule "dataset-elections-usa-2020-presidential-foxnewsfeed"]
+	path = dataset-elections-usa-2020-presidential-foxnewsfeed
+	url = https://github.com/indeobs/dataset-elections-usa-2020-presidential-foxnewsfeed
