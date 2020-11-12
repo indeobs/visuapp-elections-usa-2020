@@ -1,5 +1,5 @@
 <template>
-  <div v-if="dataByState">
+  <div v-if="derivationByState">
     <h1>Votes comparison Biden vs. Trump, on-time ballots vs late ballots.</h1>
     <div class="TooltipProcessingballotByStateByDay">
       <table class="table">
@@ -13,7 +13,16 @@
         </thead>
         <tbody>
           <tr v-for="derivation in derivationByState" :key="derivation.state">
-            <td>{{ derivation.electoralAreaCode }}</td>
+            <td class="watermarkContainer">
+              <div class="watermark">
+                {{
+                  `indeobs.org - ${new Date(buildTime)
+                    .toISOString()
+                    .substring(0, 16)}UTC`
+                }}
+              </div>
+              {{ derivation.electoralAreaCode }}
+            </td>
             <td>{{ (100 * derivation.derivation).toFixed(2) }}</td>
             <td>{{ (100 * derivation.proportionLateVote).toFixed(2) }}</td>
             <td>{{ (100 * derivation.change).toFixed(2) }}</td>
@@ -30,61 +39,17 @@ import Vue from 'vue'
 
 export default Vue.extend({
   props: {
-    dataByState: {
-      type: Object,
+    derivationByState: {
+      type: Array,
       default() {
         return {}
       },
-    }
-  },
-  computed: {
-    derivationByState() {
-      if (!this.dataByState) {
-        return null
-      }
-      const data = Object.entries(this.dataByState).reduce((acc, [electoralAreaCode, v]) => {
-          if (v.results.length === 1) {
-            return acc
-          }
-          const firstDayResult = v.results[0]
-          const latestDayResult = v.results[v.results.length - 1]
-          const totalCount = v.results.reduce((sum, e) => sum + e.totalCount, 0)
-          const totalLateCount = totalCount - v.results[0].totalCount
-          const proportionLateVote = totalLateCount / totalCount
-          if (proportionLateVote < 0.01) {
-            // remove area with little late votes, < 1%
-            return acc
-          }
-
-          const onTimeBidenTrumpCount = firstDayResult.countSoFar.Biden + firstDayResult.countSoFar.Trump
-          const onTimeBidenProp = firstDayResult.countSoFar.Biden / onTimeBidenTrumpCount
-          const onTimeTrumpProp = firstDayResult.countSoFar.Trump / onTimeBidenTrumpCount
-
-          const totalBidenCount = latestDayResult.countSoFar.Biden
-          const totalTrumpCount = latestDayResult.countSoFar.Trump
-
-          const lateBidenCount = totalBidenCount - firstDayResult.countSoFar.Biden
-          const lateTrumpCount = totalTrumpCount - firstDayResult.countSoFar.Trump
-          const lateBidenTrumpCount = lateBidenCount + lateTrumpCount
-
-          const lateBidenProp = lateBidenCount / lateBidenTrumpCount
-          const lateTrumpProp = lateTrumpCount / lateBidenTrumpCount
-
-          const derivation = (lateBidenProp - onTimeBidenProp) - (lateTrumpProp - onTimeTrumpProp)
-          console.log(electoralAreaCode, 'biden', onTimeBidenProp, lateBidenProp)
-          console.log(electoralAreaCode, 'trump', onTimeTrumpProp, lateTrumpProp)
-          // console.log(electoralAreaCode, 'trump', v.results[0].resultsSoFar.Trump, propTrumpLate)
-          acc.push({
-            electoralAreaCode,
-            derivation,
-            proportionLateVote,
-            change: derivation * proportionLateVote,
-          })
-          return acc
-        }, [])
-        .sort((a, b) => b.change - a.change)
-      return data
     },
+  },
+  data() {
+    return {
+      buildTime: process.env.BUILD_TIME,
+    }
   },
 })
 </script>
@@ -97,6 +62,18 @@ export default Vue.extend({
 .row-subhead {
   background-color: rgb(78, 70, 70);
   color: white;
+}
+
+.watermarkContainer {
+  position: relative;
+}
+
+.watermark {
+  color: rgb(100, 100, 100);
+  position: absolute;
+  bottom: 0px;
+  font-size: 10px;
+  right: 0px;
 }
 
 .stateHeader {

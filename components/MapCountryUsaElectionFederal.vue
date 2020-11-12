@@ -40,8 +40,9 @@ import Vue from 'vue'
 import * as topojson from 'topojson-client'
 import type * as d3ns from 'd3'
 import usAlbert from './countries-usa-states.topo.json'
-import TooltipProcessingballotByStateByDay from '~/components/TooltipProcessingballotByStateByDay'
+// import TooltipProcessingballotByStateByDay from '~/components/TooltipProcessingballotByStateByDay'
 
+// TODO declare external d3 the correct ts way ?
 declare namespace d3 {
   const geoAlbersUsa: typeof d3ns.geoAlbersUsa
 }
@@ -96,7 +97,7 @@ export default Vue.extend({
       default() {
         return {}
       },
-    }
+    },
   },
   data() {
     return {
@@ -121,7 +122,7 @@ export default Vue.extend({
       // this.selectedArea = null
       // this.classes = []
     },
-  }
+  },
 })
 </script>
 

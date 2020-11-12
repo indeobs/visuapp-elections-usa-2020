@@ -7,7 +7,7 @@ export default {
 
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
-    title: 'Democratic bias of late-ballots results in Swing States',
+    title: 'Study on the impact of the late votes on the 2020 USA presidential election',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -25,7 +25,10 @@ export default {
   css: [],
 
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
-  plugins: [],
+  plugins: [
+    'plugins/quantcast-consent.js',
+    'plugins/google-analytics.js',
+  ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
   components: true,
@@ -47,7 +50,7 @@ export default {
   build: {},
 
   router: {
-    // base: '/app/',
+    base: process.env.ROUTER_BASE,
   },
 
   env: {
