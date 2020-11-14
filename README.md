@@ -9,8 +9,8 @@ Deployed and hopefully up on https://www.indeobs.org/elections-usa-2020/
 git submodule init
 git submodule update
 [ -d gen ] || mkdir gen
-( cd dataset-elections-usa-2020-presidential-foxnewsfeed; node ./node/extract-processingballot-by-state-by-day.js; ) > gen/processingballot-by-state-by-day.json
-( cd dataset-elections-usa-2020-presidential-foxnewsfeed; node ./node/extract-processingballot-changes-by-state.js; ) > gen/processingballot-changes-by-state.json
+( cd datasets/presidential-foxnewsfeed; node ./node/extract-processingballot-by-state-by-day.js; ) > gen/processingballot-by-state-by-day.json
+( cd datasets/presidential-foxnewsfeed; node ./node/extract-processingballot-changes-by-state.js; ) > gen/processingballot-changes-by-state.json
 ```
 
 ## Build Setup
