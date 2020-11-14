@@ -252,7 +252,7 @@ export default Vue.extend({
   },
     processingballotChangesByStateSorted() {
       return this.derivationByState.reduce((acc, deriv) => {
-        const p = processingballotChangesByState.stateResults.find(p => p.stateCode === deriv.electoralAreaCode)
+        const p = processingballotChangesByState.stateResults.find(p => p.electoralAreaCode === deriv.electoralAreaCode)
         if (p) {
           acc.push({
             results: p,

@@ -1,6 +1,6 @@
 <template>
   <div v-if="rawData" class="GraphVotesEvolutionBidenVsTrumpByState">
-    <div>{{ rawData.stateCode }}</div>
+    <div>{{ rawData.electoralAreaCode }}</div>
     <svg ref="svg" :viewBox="`0 0 ${width} ${height}`" />
   </div>
 </template>
@@ -62,7 +62,7 @@ export default Vue.extend({
           if (newResult.b < 0.01) {
             console.log(
               'low biden result',
-              this.rawData.stateCode,
+              this.rawData.electoralAreaCode,
               r,
               newResult
             )
@@ -72,7 +72,7 @@ export default Vue.extend({
           if (newResult.t < 0.01) {
             console.log(
               'low trump result',
-              this.rawData.stateCode,
+              this.rawData.electoralAreaCode,
               new Date(r.ts),
               r,
               newResult
@@ -83,7 +83,7 @@ export default Vue.extend({
           ) {
             console.log(
               'around 10mins low trump result',
-              this.rawData.stateCode,
+              this.rawData.electoralAreaCode,
               new Date(r.ts),
               r,
               newResult
