@@ -18,12 +18,21 @@
     </div>
 
     <div class="whatToLookAt">
-      Data is from <a href="https://www.foxnews.com" target="_blank">foxnews.com</a> and is freely available to use from our <a href="https://github.com/indeobs/dataset-elections-usa-2020-presidential-foxnewsfeed" target="_blank">GitHub</a> account.
-      Data is polled every 10s, so we might miss some data points. We call a change of result in one state at a given time a batch (each commit of tabulation of votes ?).
-    </div>
-
-    <div class="whatToLookAt">
-      Ideally, the first batch would be the first time a state gives its result on the evening of 11/03. Unfortunately, we only started to grab the data from 11/04 at 12:09:09 ET, and we're actively looking for a reliable source for earlier results.
+      Data is from
+      <ul>
+        <li>
+          <a href="https://nytimes.com">nytimes.com</a> via the github <a href="https://github.com/alex/nyt-2020-election-scraper/">nyt-2020-election-scraper</a> project (active now). nytime data seems from <a href="https://www.edisonresearch.com/election-polling/">edisonresearch</a>
+          We mostly use the timeserie data there, and it might not be precise enough (percent 3 digit after commas), especially on small batches in PA. We have data from the start.
+        </li>
+        <li>
+          <a href="https://www.foxnews.com" target="_blank">foxnews.com</a> and is freely available to use from our <a href="https://github.com/indeobs/dataset-elections-usa-2020-presidential-foxnewsfeed" target="_blank">GitHub</a> account.
+          Data is polled every 10s, so we might miss very few data points. We call a change of result in one state at a given time a batch (each commit of tabulation of votes ?). Most probably feed from Associated Press?
+          Ideally, the first batch would be the first time a state gives its result on the evening of 11/03. Unfortunately, we only started to grab the data from 11/04 at 12:09:09 ET, and we're actively looking for a reliable source for earlier results.
+        </li>
+        <li>
+          We would actively promote the use of open data, so that opensource and other project can use the results directly from the election places.
+        </li>
+      </ul>
     </div>
 
     <div class="whatToLookAt">
@@ -35,14 +44,15 @@
         <MapCountryUsaElectionFederal
             :data-by-state="dataByStateByDay"
         />
-    </div>  
-    <p class="explanation">
+    </div>
+
+    <p v-if="dataProvider === 'fox'" class="explanation">
       The "On 11/x" column is only about votes accounted between 6 am ET that
       day and 6 am ET the following day. Except for the "On 11/4" column, where
       the count starts at 12:09:09 ET.
     </p>
 
-    <p class="explanation">
+    <p v-if="dataProvider === 'fox'" class="explanation">
       On-time ballots, votes "At 11/04 12:09:09 ET" contains :
       <ul>
         <li>Ballots cast on 11/3</li>
@@ -57,18 +67,34 @@
         <li>Mail-in ballots that couldn't be counted before 11/4 12:09:09 ET </li>
         <li>Provisional ballots (marginally, <a href="https://www.azcentral.com/story/news/politics/elections/2020/11/05/arizona-vote-counting-slowed-early-ballots-arriving-election-day/6180648002/" target="_blank">less than 1% of late votes in Maricopa County in AZ</a>, but may vary greatly by county?)</li>
       </ul>
-      
+    </p>
+    
+    <p v-if="dataProvider !== 'fox'" class="explanation">
+      On-time ballots, votes  contains :
+      <ul>
+        <li>Ballots cast on 11/3 and before 11/04 at 04:00 am ET"</li>
+        <li>Ballots from voted-early at the polls that could be counted before 11/04 at 04:00 am ET</li>
+        <li>Early-returned vote-by-mail ballots that could be counted before 11/04 at 04:00 am ET</li>
+      </ul>
+
+      Late-ballots contains :
+      <ul>
+        <li>Mail-in ballots that couldn't be counted before 11/04 at 04:00 am ET </li>
+        <li>Provisional ballots (marginally, <a href="https://www.azcentral.com/story/news/politics/elections/2020/11/05/arizona-vote-counting-slowed-early-ballots-arriving-election-day/6180648002/" target="_blank">less than 1% of late votes in Maricopa County in AZ</a>, but may vary greatly by county?)</li>
+      </ul>
+    </p>
+    
+    <p>
       Provisional ballots are given to voters who can't verify their ID at the polls or who received a mail-in ballot but decided to vote in person.
       Hopefully, later update of the app will try to make each state vote policy more easily understandable.
     </p>
 
-    <p class="explanation">
-      Data starts on 11/04 at 12:09:09 ET because it was only started to be grabbed from that time. If by any chance, someone
+
+    <p  v-if="dataProvider === 'fox'" class="explanation">
+      Fox data starts on 11/04 at 12:09:09 ET because it was only started to be grabbed from that time. If by any chance, someone
       has more data, please contact us at <a href="https://github.com/indeobs/dataset-elections-usa-2020-presidential-foxnewsfeed" target="_blank">GitHub</a>
       or by email at github@indeobs.com. This would be important data to have, especially for Wisconsin and Michigan.
     </p>
-
-
 
 
     <TableTrumpVsBidenAndOnTimeVsLate
@@ -76,11 +102,11 @@
     />
 
     <p class="explanation">
-      3 metrics are available in this table when comparing vote results before and after 11/04 12:09:09 ET. The table is sorted by the last column.
+      3 metrics are available in this table when comparing on-time and late vote results. The table is sorted by the last column.
 
       <ul>
         <li>Derivation: how far the two groups are different of each other</li>
-        <li>% of votes late: is the proportion of votes counted after 11/04 12:09:09 ET</li>
+        <li>% of votes late: is the proportion of late votes</li>
         <li>% favoring Biden induced by late votes: how much late votes changed the result. Negative results mean that Trump had gains</li>
       </ul>
 
@@ -185,28 +211,30 @@
 // @ts-nocheck
 import Vue from 'vue' //
 // import TooltipProcessingballotByStateByDay from '~/components/TooltipProcessingballotByStateByDay'
-// import foxDataByStateByDay from '~/gen/fox-processingballot-by-state-by-day.json'
-// import foxPresidentialTimeseriesByElectoralArea from '~/gen/fox-processingballot-changes-by-state.json'
-// import nytDataByStateByDay from '~/gen/nyt-processingballot-by-state-by-day.json'
+import foxPresidentialTimeseriesByElectoralArea from '~/gen/fox-processingballot-timeseries-by-electoral-area.json'
 import nytPresidentialTimeseriesByElectoralArea from '~/gen/nyt-processingballot-timeseries-by-electoral-area.json'
 
 const dataByNewsOutlet = {
-  /* fox: {
-    dataByStateByDay: foxDataByStateByDay,
+  fox: {
+    upstreamProvider: 'AP?',
     presidentialTimeseriesByElectoralArea: foxPresidentialTimeseriesByElectoralArea,
-  }, */
+    startsLate: true,
+  },
   nyt: {
+    upstreamProvider: 'edison',
     presidentialTimeseriesByElectoralArea: nytPresidentialTimeseriesByElectoralArea,
   },
 };
 
-const importedData = dataByNewsOutlet.nyt;
+const dataProvider = 'nyt'
+const importedData = dataByNewsOutlet[dataProvider];
 
 export default Vue.extend({
   data() {
     return {
       // TooltipProcessingballotByStateByDayByDay,
       buildTime: process.env.BUILD_TIME,
+      dataProvider,
     }
   },
   computed: {
