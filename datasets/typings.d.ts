@@ -1,8 +1,8 @@
 
 interface ElectoralAreaResult {
   date: string,
-  proportion: number,
-  totalCount: numver:
+  proportion?: number,
+  totalCount: number,
   resultsThatDay: Object<string, number>; // candidate, percent
   countSoFar: Object<string, number>; // candidate, voters
   resultsSoFar: Object<string, number>;  // candidate, percent
@@ -19,16 +19,28 @@ interface ProcessingballotByStateByDay {
 ////////////////:
 interface ProcessingballotResults {
   ts: number // ms
-  voteCounts: Object<string, number> // candidate, votes
+  voteCounts: object<string, number>, // candidate, votes
 }
 
-interface ProcessingballotChangesByState {
+interface ProcessingballotChangesInState {
   results: Array<ProcessingballotResults>,
   stateCode: string,
   availableDelegates: number,
 }
 
 interface ProcessingballotChangesByState {
-  stateResults: Array<ProcessingballotChanges>,
+  stateResults: Array<ProcessingballotChangesInState>,
 }
+
+///////////////
+interface Timeserie {
+  ts: number, // second 
+  metrics: Array<number>
+}
+interface TimeserieInElectoralArea {
+  electoralAreaCode: string, // 
+  metricsDesc: Array<Object<string, string>>,
+  timeserie: Timeserie,
+}
+
 

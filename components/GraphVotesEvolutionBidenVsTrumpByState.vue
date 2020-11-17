@@ -1,6 +1,6 @@
 <template>
-  <div v-if="rawData" class="GraphVotesEvolutionBidenVsTrumpByState">
-    <div>{{ rawData.electoralAreaCode }}</div>
+  <div v-if="batchesData" class="GraphVotesEvolutionBidenVsTrumpByState">
+    <div>{{ batchesData.electoralAreaCode }}</div>
     <svg ref="svg" :viewBox="`0 0 ${width} ${height}`" />
   </div>
 </template>
@@ -12,7 +12,7 @@ import Vue from 'vue'
 
 export default Vue.extend({
   props: {
-    rawData: {
+    batchesData: {
       type: Object,
       default() {
         return {}
@@ -27,43 +27,48 @@ export default Vue.extend({
   },
   computed: {
     votesTrumpVsBiden() {
-      if (!this.rawData) {
+      if (!this.batchesData) {
         return null
       }
 
-      const stateResult = this.rawData
+      const { metricsDesc, timeserie } = this.batchesData
+      const bidenIndex = metricsDesc.findIndex(
+        (desc) => desc.lastName === 'Biden'
+      )
+      const trumpIndex = metricsDesc.findIndex(
+        (desc) => desc.lastName === 'Trump'
+      )
 
       let previousResult
       let soFarBT = 0
       // for each result, we're interested in the result as compared to the previous one, and not the big totals so far
       // we only store datapoint with increasing Biden+Trump votes, as we wouldn't know how to display when this total is decreasing
       // this could be misleading, need to check cases later
-      const data = stateResult.results.reduce((acc, r) => {
-        const thisBT = r.voteCounts.Biden + r.voteCounts.Trump - soFarBT
+      const data = timeserie.reduce((acc, { metrics }) => {
+        const thisBT = metrics[bidenIndex] + metrics[trumpIndex] - soFarBT
         if (!previousResult || thisBT > 0) {
           let newResult
           if (previousResult === undefined) {
             newResult = {
               soFarBT,
               thisBT,
-              b: r.voteCounts.Biden / thisBT,
-              t: r.voteCounts.Trump / thisBT,
+              b: metrics[bidenIndex] / thisBT,
+              t: metrics[trumpIndex] / thisBT,
             }
           } else {
             newResult = {
               soFarBT,
               thisBT,
-              b:
-                (r.voteCounts.Biden - previousResult.voteCounts.Biden) / thisBT,
-              t:
-                (r.voteCounts.Trump - previousResult.voteCounts.Trump) / thisBT,
+              b: (metrics[bidenIndex] - previousResult[bidenIndex]) / thisBT,
+              t: (metrics[trumpIndex] - previousResult[trumpIndex]) / thisBT,
             }
           }
+          /*
           if (newResult.b < 0.01) {
             console.log(
               'low biden result',
-              this.rawData.electoralAreaCode,
-              r,
+              electoralAreaCode,
+              metrics,
               newResult
             )
           }
@@ -72,23 +77,24 @@ export default Vue.extend({
           if (newResult.t < 0.01) {
             console.log(
               'low trump result',
-              this.rawData.electoralAreaCode,
-              new Date(r.ts),
-              r,
+              electoralAreaCode,
+              new Date(ts),
+              metrics,
               newResult
             )
           } else if (
-            1604522460000 - 30 * 60 * 1000 < r.ts &&
-            r.ts < 1604522460000 + 30 * 60 * 1000
+            1604522460000 - 30 * 60 * 1000 < ts &&
+            ts < 1604522460000 + 30 * 60 * 1000
           ) {
             console.log(
               'around 10mins low trump result',
-              this.rawData.electoralAreaCode,
-              new Date(r.ts),
-              r,
+              electoralAreaCode,
+              new Date(ts),
+              metrics,
               newResult
             )
           }
+          */
           acc.push(newResult)
           // hack to get rectangle areas
           acc.push({
@@ -98,7 +104,7 @@ export default Vue.extend({
             t: newResult.t,
           })
           soFarBT += thisBT
-          previousResult = r
+          previousResult = metrics
         }
         return acc
       }, [])
@@ -109,15 +115,20 @@ export default Vue.extend({
     },
 
     votesTrumpVsBidenPercentSoFar() {
-      if (!this.rawData) {
+      if (!this.batchesData) {
         return null
       }
 
-      const stateResult = this.rawData
-
-      const data = stateResult.results.reduce((acc, r, idx) => {
-        const count = r.voteCounts.Biden + r.voteCounts.Trump
-        const trumpScore = r.voteCounts.Trump / count
+      const { metricsDesc, timeserie } = this.batchesData
+      const bidenIndex = metricsDesc.findIndex(
+        (desc) => desc.lastName === 'Biden'
+      )
+      const trumpIndex = metricsDesc.findIndex(
+        (desc) => desc.lastName === 'Trump'
+      )
+      const data = timeserie.reduce((acc, { metrics }, idx) => {
+        const count = metrics[bidenIndex] + metrics[trumpIndex]
+        const trumpScore = metrics[trumpIndex] / count
         if (idx === 0) {
           acc.push([0, trumpScore])
         }

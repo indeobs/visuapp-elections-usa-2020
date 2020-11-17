@@ -30,10 +30,10 @@
       This is a provisional work and reviews are welcomed on the GitHub project.  
     </div>
 
-    <div v-if="dataByState" class="allWidth">
+    <div v-if="dataByStateByDay" class="allWidth">
       <h1>Votes per state per day</h1>
         <MapCountryUsaElectionFederal
-            :data-by-state="dataByState"
+            :data-by-state="dataByStateByDay"
         />
     </div>  
     <p class="explanation">
@@ -90,13 +90,11 @@
 
 
     <h1>Votes Biden vs. Trump</h1>
-    <div class="container">
-      <div class="row">
-        <div v-for="processingballotChangesInState in processingballotChangesByStateSorted" :key="processingballotChangesInState.electoralAreaCode" class="col-6 col-sm-3">
-          <GraphVotesEvolutionBidenVsTrumpByState
-            :raw-data="processingballotChangesInState.results"
-          />
-        </div>
+    <div class="fullWidth row">
+      <div v-for="batchesInElectoralArea in batchesByElectoralAreaSorted" :key="batchesInElectoralArea.electoralAreaCode" class="col-6 col-sm-3">
+        <GraphVotesEvolutionBidenVsTrumpByState
+          :batches-data="batchesInElectoralArea"
+        />
       </div>
     </div>
     <p class="explanation">
@@ -186,23 +184,99 @@
 // @ts-nocheck
 import Vue from 'vue' //
 // import TooltipProcessingballotByStateByDay from '~/components/TooltipProcessingballotByStateByDay'
-import dataByState from '~/gen/processingballot-by-state-by-day.json'
-import processingballotChangesByState from '~/gen/processingballot-changes-by-state.json'
+// import foxDataByStateByDay from '~/gen/fox-processingballot-by-state-by-day.json'
+// import foxPresidentialTimeseriesByElectoralArea from '~/gen/fox-processingballot-changes-by-state.json'
+// import nytDataByStateByDay from '~/gen/nyt-processingballot-by-state-by-day.json'
+import nytPresidentialTimeseriesByElectoralArea from '~/gen/nyt-processingballot-timeseries-by-electoral-area.json'
+
+const dataByNewsOutlet = {
+  /* fox: {
+    dataByStateByDay: foxDataByStateByDay,
+    presidentialTimeseriesByElectoralArea: foxPresidentialTimeseriesByElectoralArea,
+  }, */
+  nyt: {
+    presidentialTimeseriesByElectoralArea: nytPresidentialTimeseriesByElectoralArea,
+  },
+};
+
+const importedData = dataByNewsOutlet.nyt;
 
 export default Vue.extend({
   data() {
     return {
-      // TooltipProcessingballotByStateByDay,
-      dataByState,
+      // TooltipProcessingballotByStateByDayByDay,
       buildTime: process.env.BUILD_TIME,
     }
   },
   computed: {
-    derivationByState() {
-      if (!dataByState) {
+    dataByStateByDay() {
+      if (!importedData.presidentialTimeseriesByElectoralArea) {
         return null
       }
-      const data = Object.entries(dataByState).reduce((acc, [electoralAreaCode, v]) => {
+
+      const data = importedData.presidentialTimeseriesByElectoralArea.reduce((acc, ballotChangesInElectoralArea) => {
+        const { electoralAreaCode, timeserie, metricsDesc } = ballotChangesInElectoralArea
+        const stepDate = new Date(Date.UTC(2020, 11-1, 4, 9));
+        let previousDayEvent;
+        let previousEvent;
+        // const totalCountMetrics = metricsDesc.map(() => 0)
+        acc[electoralAreaCode] = {
+          electoralAreaCode,
+          results: timeserie.reduce((acc2, event) => {
+            const { ts: thisTsSeconds } = event
+            const thisTs = 1000 * thisTsSeconds;
+            if (thisTs <= stepDate.getTime()) {
+              previousEvent = event;
+              return acc2;
+            }
+            const { ts: tsSeconds, metrics } = previousEvent || event
+            const ts = 1000 * tsSeconds;
+            const totalCount = metrics.reduce((acc3, m) => acc3 + m, 0);
+            const totalThatDay = totalCount - (previousDayEvent ? previousDayEvent.metrics.reduce((acc3, m) => acc3 + m, 0) : 0)
+
+            /* if (electoralAreaCode === 'ME') {
+              console.log(electoralAreaCode, metrics)
+              console.log(stepDate, totalCount, totalThatDay, previousDayEvent ? previousDayEvent.metrics.reduce((acc3, m) => acc3 + m, 0) : 0)
+            } */
+            const subdata = {
+              ts,
+              totalCount: totalThatDay,
+              resultsThatDay: metrics.reduce((acc3, m, idx) => {
+                acc3[metricsDesc[idx].lastName] = (m - (previousDayEvent ? previousDayEvent.metrics[idx] : 0)) / totalThatDay;
+                return acc3;
+              }, {}),
+              countSoFar: metrics.reduce((acc3, m, idx) => {
+                acc3[metricsDesc[idx].lastName] = m;
+                return acc3;
+              }, {}),
+              resultsSoFar: metrics.reduce((acc3, m, idx) => {
+                acc3[metricsDesc[idx].lastName] = m / totalCount;
+                return acc3;
+              }, {}),
+            };
+            acc2.push(subdata);
+            const daysToAdd = Math.ceil((thisTs - stepDate.getTime()) / (24 * 60 * 60 * 1000));
+            stepDate.setDate(stepDate.getDate() + daysToAdd);
+            /* if (electoralAreaCode === 'ME') {
+              console.log('thisTs', new Date(thisTs))
+              console.log('daydata', subdata)
+              console.log('day to add ', stepDate, stepDate.getDate() + daysToAdd, daysToAdd)
+            } */
+            previousDayEvent = previousEvent || event; 
+            previousEvent = event;
+            return acc2;
+          }, []),
+        };
+        return acc;
+      }, {});
+      return data;
+    },
+    derivationByState() {
+      if (!this.dataByStateByDay) {
+        return null
+      }
+      // console.log(this.dataByStateByDay)
+      const data = Object.entries(this.dataByStateByDay).reduce((acc, [electoralAreaCode, v]) => {
           if (v.results.length === 1) {
             return acc
           }
@@ -245,23 +319,20 @@ export default Vue.extend({
         .sort((a, b) => b.change - a.change)
       return data
     },
-  head() {
-    return {
-      title: 'Study on the impact of the late votes on the 2020 USA presidential election',
-    }
-  },
-    processingballotChangesByStateSorted() {
+    batchesByElectoralAreaSorted() {
       return this.derivationByState.reduce((acc, deriv) => {
-        const p = processingballotChangesByState.stateResults.find(p => p.electoralAreaCode === deriv.electoralAreaCode)
+        const p = importedData.presidentialTimeseriesByElectoralArea.find(p => p.electoralAreaCode === deriv.electoralAreaCode)
         if (p) {
-          acc.push({
-            results: p,
-            electoralAreaCode: deriv.electoralAreaCode,
-          });
+          acc.push(p)
         }
         return acc;
       }, [])
     },
+  },
+  head() {
+    return {
+      title: 'Study on the impact of the late votes on the 2020 USA presidential election',
+    }
   },
 })
 </script>
@@ -285,6 +356,10 @@ body {
 
 .subtitle {
   font-size: 110%;
+}
+
+.fullWidth {
+  width: 100%;
 }
 
 .pageTitleWithSubtitle {

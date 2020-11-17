@@ -10,20 +10,24 @@
           <th scope="col"></th>
           <th
             v-for="result in areaData.results"
-            :id="result.date"
-            :key="result.date"
+            :id="result.ts"
+            :key="result.ts"
             scope="col"
           >
             {{
-              new Date(result.date).getTime() === 1604509749000 // 2020-11-04T17:09:09Z
-                ? `At 11/04 ${new Date(result.date).toLocaleString(undefined, {
+              result.ts === 1604509749000 // 2020-11-04T17:09:09Z
+                ? `At 11/04 ${new Date(result.ts).toLocaleString(undefined, {
                     hour: 'numeric',
                     minute: 'numeric',
                     second: 'numeric',
                   })}`
                 : `On 11/${new Date(
-                    new Date(result.date).getTime() - 24 * 60 * 60 * 1000
-                  ).getDate()}`
+                    result.ts - 12 * 60 * 60 * 1000
+                  ).toLocaleString('en-US', {
+                    day: 'numeric',
+                    timeZone: 'America/New_York',
+                  })}`
+              /* : `On ${new Date(result.ts).toLocaleString(undefined, { timeZone: 'America/New_York'})}` */
             }}
           </th>
           <th scope="col" class="lastCol">Last known result</th>
@@ -34,12 +38,12 @@
           <th scope="row">Percent of #votes</th>
           <td
             v-for="result in areaData.results"
-            :id="result.date"
-            :key="result.date"
+            :id="result.ts"
+            :key="result.ts"
             scope="col"
           >
             <!-- // use totalCount? -->
-            {{ (100 * result.proportion).toFixed(2) }}
+            {{ (100 * (result.totalCount / latestDayVotes)).toFixed(2) }}
           </td>
           <td class="lastCol">100</td>
         </tr>
@@ -56,8 +60,8 @@
           </th>
           <td
             v-for="result in areaData.results"
-            :id="result.date"
-            :key="result.date"
+            :id="result.ts"
+            :key="result.ts"
             scope="col"
           >
             <!-- // use resultsSoFar? -->
@@ -96,14 +100,22 @@ export default Vue.extend({
     }
   },
   computed: {
+    latestDayResult() {
+      const last = this.areaData.results[this.areaData.results.length - 1]
+      return last
+    },
+    latestDayVotes() {
+      return Object.values(this.latestDayResult.countSoFar).reduce(
+        (acc, sum) => acc + sum,
+        0
+      )
+    },
     contestants() {
       if (!this.areaData) {
         return null
       }
       // console.log(this.areaData.results[0].date, new Date(this.areaData.results[0].date).getTime());
-      const latestDayResult = this.areaData.results[
-        this.areaData.results.length - 1
-      ]
+      const latestDayResult = this.latestDayResult
       const contestants = Object.keys(latestDayResult.resultsSoFar).sort(
         (a, b) =>
           latestDayResult.resultsSoFar[b] - latestDayResult.resultsSoFar[a]
