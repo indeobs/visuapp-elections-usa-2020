@@ -1,6 +1,6 @@
 <template>
-  <div v-if="batchesData" class="GraphVotesEvolutionBidenVsTrumpByState">
-    <div>{{ batchesData.electoralAreaCode }}</div>
+  <div v-if="timeserieInElectoralArea" class="GraphVotesEvolutionBidenVsTrumpByState">
+    <div>{{ timeserieInElectoralArea.electoralAreaCode }}</div>
     <svg ref="svg" :viewBox="`0 0 ${width} ${height}`" />
   </div>
 </template>
@@ -12,10 +12,16 @@ import Vue from 'vue'
 
 export default Vue.extend({
   props: {
-    batchesData: {
+    timeserieInElectoralArea: {
       type: Object,
       default() {
         return {}
+      },
+    },
+    days: {
+      type: Array,
+      default() {
+        return null
       },
     },
   },
@@ -27,11 +33,12 @@ export default Vue.extend({
   },
   computed: {
     votesTrumpVsBiden() {
-      if (!this.batchesData) {
+      if (!this.timeserieInElectoralArea) {
         return null
       }
 
-      const { metricsDesc, timeserie } = this.batchesData
+      const { metricsDesc, timeserie } = this.timeserieInElectoralArea
+
       const bidenIndex = metricsDesc.findIndex(
         (desc) => desc.lastName === 'Biden'
       )
@@ -115,11 +122,11 @@ export default Vue.extend({
     },
 
     votesTrumpVsBidenPercentSoFar() {
-      if (!this.batchesData) {
+      if (!this.timeserieInElectoralArea) {
         return null
       }
 
-      const { metricsDesc, timeserie } = this.batchesData
+      const { metricsDesc, timeserie } = this.timeserieInElectoralArea
       const bidenIndex = metricsDesc.findIndex(
         (desc) => desc.lastName === 'Biden'
       )
@@ -217,17 +224,31 @@ export default Vue.extend({
       .attr('class', 'line50')
       .attr('d', line50(horizontal50LineData))
 
-    const winnerLineData = this.votesTrumpVsBidenPercentSoFar
-    const winnerLine = d3
+    const lineLinearData = d3
       .line()
       .x((d) => x(d[0]))
       .y((d) => y(d[1]))
+
+    const winnerLineData = this.votesTrumpVsBidenPercentSoFar
 
     // Add the valueline path.
     svg
       .append('path')
       .attr('class', 'winnerLine')
-      .attr('d', winnerLine(winnerLineData))
+      .attr('d', lineLinearData(winnerLineData))
+
+    // const daysLine = this.days
+    this.days.forEach((day) => {
+      const dayLineData = [
+        [day.totalCount, 0],
+        [day.totalCount, 1]
+      ]
+
+      svg
+        .append('path')
+        .attr('class', 'dayLine')
+        .attr('d', lineLinearData(dayLineData))
+    })
 
     svg
       .append('text')
@@ -295,6 +316,14 @@ export default Vue.extend({
   stroke: #ffd000; /* gold */
   stroke-width: 2;
   shape-rendering: crispEdges;
+}
+
+.dayLine {
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
+  shape-rendering: crispEdges;
+  stroke-dasharray: 3, 3;
 }
 
 .watermark {

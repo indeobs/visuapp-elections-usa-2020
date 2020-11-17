@@ -43,7 +43,7 @@
             scope="col"
           >
             <!-- // use totalCount? -->
-            {{ (100 * (result.totalCount / latestDayVotes)).toFixed(2) }}
+            {{ (100 * (result.totalThatDay / latestDayVotes)).toFixed(2) }}
           </td>
           <td class="lastCol">100</td>
         </tr>

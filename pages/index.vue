@@ -93,7 +93,8 @@
     <div class="fullWidth row">
       <div v-for="batchesInElectoralArea in batchesByElectoralAreaSorted" :key="batchesInElectoralArea.electoralAreaCode" class="col-6 col-sm-3">
         <GraphVotesEvolutionBidenVsTrumpByState
-          :batches-data="batchesInElectoralArea"
+          :timeserie-in-electoral-area="batchesInElectoralArea.timeserieInElectoralArea"
+          :days="batchesInElectoralArea.days.slice(0, 1)"
         />
       </div>
     </div>
@@ -240,7 +241,8 @@ export default Vue.extend({
             } */
             const subdata = {
               ts,
-              totalCount: totalThatDay,
+              totalThatDay,
+              totalCount,
               resultsThatDay: metrics.reduce((acc3, m, idx) => {
                 acc3[metricsDesc[idx].lastName] = (m - (previousDayEvent ? previousDayEvent.metrics[idx] : 0)) / totalThatDay;
                 return acc3;
@@ -282,8 +284,8 @@ export default Vue.extend({
           }
           const firstDayResult = v.results[0]
           const latestDayResult = v.results[v.results.length - 1]
-          const totalCount = v.results.reduce((sum, e) => sum + e.totalCount, 0)
-          const totalLateCount = totalCount - v.results[0].totalCount
+          const totalCount = latestDayResult.totalCount
+          const totalLateCount = totalCount - firstDayResult.totalCount
           const proportionLateVote = totalLateCount / totalCount
           if (proportionLateVote < 0.01) {
             // remove area with little late votes, < 1%
@@ -321,9 +323,15 @@ export default Vue.extend({
     },
     batchesByElectoralAreaSorted() {
       return this.derivationByState.reduce((acc, deriv) => {
-        const p = importedData.presidentialTimeseriesByElectoralArea.find(p => p.electoralAreaCode === deriv.electoralAreaCode)
-        if (p) {
-          acc.push(p)
+        const { electoralAreaCode } = deriv
+        const timeserieInElectoralArea = importedData.presidentialTimeseriesByElectoralArea.find(p => p.electoralAreaCode === electoralAreaCode)
+        const days = this.dataByStateByDay[electoralAreaCode].results.map(r => ({ ts: r.ts, totalCount: r.totalCount }))
+        if (timeserieInElectoralArea) {
+          acc.push({
+            electoralAreaCode,
+            timeserieInElectoralArea,
+            days
+          })
         }
         return acc;
       }, [])
